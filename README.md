@@ -7,7 +7,6 @@ LocalLens is a web app that helps you discover offbeat, lesser-known spots at an
 
 
 What the app does:
-
 Search for any city or destination
 Browse lesser-known and interesting places around that area
 Filter spots by category — food, nature, photo spots, hidden gems, etc.
@@ -17,8 +16,7 @@ Works on mobile, tablet, and desktop
 
 
 
-Tech Stack
-
+Tech Stack:
 HTML, CSS, JavaScript — the core of everything
 Fetch API — to pull live data from the places API
 OpenTripMap API — provides data on attractions and points of interest worldwide, including lesser-known spots
@@ -28,8 +26,7 @@ Optionally: Tailwind CSS for styling
 
 
 
-Planned Features
-
+Planned Features:
 Search — find spots by city or keyword
 Filter by category — nature, food, photography, hidden gems
 Sort — by rating, name, or distance
@@ -40,14 +37,14 @@ Pagination — browse results page by page without overwhelming the screen
 
 
 
-API Being Used
-OpenTripMap API
+API Being Used:
+1) OpenTripMap API =>
 
 Website: https://opentripmap.io
 Docs: https://opentripmap.io/product
 Why this one? It has a large database of places including offbeat, cultural, and historic spots that don't always show up on mainstream travel apps. It covers locations worldwide, supports category-based filtering, and has a free tier which is perfect for this project.
 
-Foursquare Places API
+2) Foursquare Places API =>
 
 Website: https://foursquare.com/developer
 Docs: https://developer.foursquare.com
@@ -58,7 +55,7 @@ Secondary API: Foursquare — used for food, stays, and local venue data.
 
 
 
-How to Run This Project
+How to Run This Project:
 No complicated setup needed — it's a plain HTML/CSS/JS project.
 
 Clone the repo:
@@ -70,5 +67,5 @@ If you want to use the live API, get a free API key from https://opentripmap.io 
 
 
 
-Current Status
+Current Status:
 Milestone 1 complete — project planned, repo created, README written. Development starts with Milestone 2.
