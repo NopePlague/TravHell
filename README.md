@@ -48,25 +48,13 @@ TravHell is a web app that helps you discover offbeat, lesser-known spots at any
 <h3>API Being Used:</h3>
 
 
-<pre>1) OpenTripMap API =></pre>
+<pre>Geoapify =></pre>
 
-Website: https://opentripmap.io
+Website: https://www.geoapify.com/places-api/
 
-Docs: https://opentripmap.io/product
+Docs: https://apidocs.geoapify.com/docs/places/
 
 Why this one? It has a large database of places including offbeat, cultural, and historic spots that don't always show up on mainstream travel apps. It covers locations worldwide, supports category-based filtering, and has a free tier which is perfect for this project.
-
-<pre>2) Foursquare Places API =></pre>
-
-Website: https://foursquare.com/developer
-
-Docs: https://developer.foursquare.com
-
-Why this one? It provides real user-contributed data like tips, ratings, and venue details. Useful for finding restaurants, cafes, and local hangout spots with genuine reviews.
-
-Primary API: OpenTripMap — used for discovering attractions and offbeat spots.
-
-Secondary API: Foursquare — used for food, stays, and local venue data.
 
 <br>
 <br>
