@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TravHell</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>TravHell</h1>
+  <p class="tagline">Discover places only locals know</p>
+
+  <div id="loading">Loading hidden gems...</div>
+
+  <div id="places"></div>
+
+  <!-- Modal -->
+  <div id="modal" class="hidden">
+    <div id="modal-content">
+      <span id="close">&times;</span>
+      <img id="modal-img" />
+      <h2 id="modal-name"></h2>
+      <p id="modal-location"></p>
+      <p id="modal-category"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
