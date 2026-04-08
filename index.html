@@ -1,28 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TravHell</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-  <h1>TravHell</h1>
-  <p class="tagline">Discover places only locals know</p>
+  <nav>
+    <div class="logo">TravHell ✦</div>
+    <div class="nav-right">
+      <button class="fav-nav-btn" onclick="toggleFavPanel()">
+        ♥ Saved <span id="favCount" class="fav-count">0</span>
+      </button>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    </div>
+  </nav>
 
-  <div id="loading">Loading hidden gems...</div>
+  <section class="hero">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <p class="hero-tag">✦ Local spots. Real gems.</p>
+    <h1>Discover Places<br><span class="grad">Only Locals Know</span></h1>
+    <p class="hero-sub">Skip the tourist traps. Find hidden viewpoints, secret dhabas, and offbeat spots that never make it to travel guides.</p>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search by name or category..." oninput="handleSearch()" />
+    </div>
+  </section>
 
-  <div id="places"></div>
+  <div class="controls" id="controls">
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter('natural', this)">🌿 Nature</button>
+      <button class="filter-btn" onclick="setFilter('cultural', this)">🎭 Culture</button>
+      <button class="filter-btn" onclick="setFilter('heritage', this)">🏛️ Heritage</button>
+      <button class="filter-btn" onclick="setFilter('religion', this)">🕌 Religious</button>
+      <button class="filter-btn" onclick="setFilter('sport', this)">⚽ Sport</button>
+    </div>
+    <select id="sortSelect" class="sort-select" onchange="applySortFilter()">
+      <option value="default">Sort: Default</option>
+      <option value="name_asc">Name A → Z</option>
+      <option value="name_desc">Name Z → A</option>
+    </select>
+  </div>
 
-  <!-- Modal -->
-  <div id="modal" class="hidden">
-    <div id="modal-content">
-      <span id="close">&times;</span>
-      <img id="modal-img" />
+  <p class="result-info" id="resultInfo"></p>
+
+  <div id="loading" class="loading-wrap">
+    <div class="spinner"></div>
+    <p>Finding hidden gems...</p>
+  </div>
+
+  <div id="places" class="grid"></div>
+
+  <div id="pagination" class="pagination"></div>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('modal').classList.add('hidden')">✕</button>
+      <img id="modal-img" alt="place" />
       <h2 id="modal-name"></h2>
       <p id="modal-location"></p>
       <p id="modal-category"></p>
     </div>
+  </div>
+
+  <div class="overlay" id="overlay" onclick="toggleFavPanel()"></div>
+  <div class="fav-panel" id="favPanel">
+    <div class="fav-header">
+      <h3>♥ Saved Places</h3>
+      <button onclick="toggleFavPanel()" class="fav-close">✕</button>
+    </div>
+    <div id="favList" class="fav-list"></div>
   </div>
 
   <script src="script.js"></script>
