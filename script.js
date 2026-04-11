@@ -1,68 +1,22 @@
-// let api = "https://api.geoapify.com/v2/places?categories=tourism&filter=circle:77.2167,28.6667,20000&limit=50&apiKey=a31292bf77a74691a892781eb579eb50";
+var API_KEY = "a31292bf77a74691a892781eb579eb50";
+var FALLBACK_IMG = "https://static.vecteezy.com/system/resources/previews/031/975/000/non_2x/modern-minimal-not-found-error-icon-oops-page-not-found-404-error-the-page-not-found-with-concept-cartoon-cut-theme-web-banner-link-to-empty-non-existent-page-workers-repairs-website-vector.jpg";
+var PER_PAGE = 9;
+var API_URL = "https://api.geoapify.com/v2/places?categories=tourism&filter=circle:77.2167,28.6667,20000&limit=50&apiKey=" + API_KEY;
 
-// async function fetchPlaceImage() {
-//   try {
-//     const response = await fetch(api);
-//     const data = await response.json();
-//     for (let i = 0; i < data.features.length; i++) {
-//         const wikidataId =
-//           data?.features?.[i]?.properties?.wiki_and_media?.wikidata;
-    
-//         if (!wikidataId) {
-//           console.log("No Wikidata ID found");
-//           continue;
-//         }
-//         console.log(i+1)
-//         console.log("Wikidata ID:", wikidataId);
-//         console.log("Name: ",data.features[i].properties.name);
-    
-//         const url = `https://www.wikidata.org/wiki/Special:EntityData/${wikidataId}.json`;
-//         const res = await fetch(url);
-//         const wikidata = await res.json();
-    
-//         const entity = wikidata.entities[wikidataId];
-    
-//         if (!entity.claims.P18) {
-//           console.log("No image available");
-//           continue;
-//         }
-    
-//         const imageName =
-//           entity.claims.P18[0].mainsnak.datavalue.value;
-    
-//         const imageUrl =
-//           "https://commons.wikimedia.org/wiki/Special:FilePath/" +
-//           encodeURIComponent(imageName);
-    
-//         console.log("Image URL:", imageUrl);
-//     }
+var allPlaces = [];
+var filteredPlaces = [];
+var currentFilter = "all";
+var currentPage = 1;
+var searchQuery = "";
+var debounceTimer;
+var isDark = true;
 
-//   } catch (error) {
-//     console.error("Error:", error);
-//   }
-// }
+var container  = document.getElementById("places");
+var loading    = document.getElementById("loading");
+var pagination = document.getElementById("pagination");
+var resultInfo = document.getElementById("resultInfo");
 
-// fetchPlaceImage();
-
-
-
-const API_KEY = "a31292bf77a74691a892781eb579eb50";
-const FALLBACK_IMG = "https://static.vecteezy.com/system/resources/previews/031/975/000/non_2x/modern-minimal-not-found-error-icon-oops-page-not-found-404-error-the-page-not-found-with-concept-cartoon-cut-theme-web-banner-link-to-empty-non-existent-page-workers-repairs-website-vector.jpg";
-const PER_PAGE = 9;
-
-let allPlaces = [];
-let filteredPlaces = [];
-let currentFilter = "all";
-let currentPage = 1;
-let searchQuery = "";
-let debounceTimer;
-
-const container  = document.getElementById("places");
-const loading    = document.getElementById("loading");
-const pagination = document.getElementById("pagination");
-const resultInfo = document.getElementById("resultInfo");
-
-let favorites = JSON.parse(localStorage.getItem("travhell_favs") || "[]");
+var favorites = JSON.parse(localStorage.getItem("travhell_favs") || "[]");
 
 function saveFavs() {
   localStorage.setItem("travhell_favs", JSON.stringify(favorites));
@@ -71,12 +25,20 @@ function saveFavs() {
 }
 
 function isFaved(id) {
-  return favorites.some(f => f.id === id);
+  var found = false;
+  for (var i = 0; i < favorites.length; i++) {
+    if (favorites[i].id === id) { found = true; break; }
+  }
+  return found;
 }
 
 function toggleFav(place) {
   if (isFaved(place.id)) {
-    favorites = favorites.filter(f => f.id !== place.id);
+    var newFavs = [];
+    for (var i = 0; i < favorites.length; i++) {
+      if (favorites[i].id !== place.id) newFavs.push(favorites[i]);
+    }
+    favorites = newFavs;
   } else {
     favorites.push(place);
   }
@@ -88,17 +50,25 @@ function updateFavCount() {
 }
 
 function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute("data-theme") === "dark";
-  html.setAttribute("data-theme", isDark ? "light" : "dark");
-  document.getElementById("themeBtn").textContent = isDark ? "☀️" : "🌙";
-  localStorage.setItem("travhell_theme", isDark ? "light" : "dark");
+  var body = document.getElementById("body-dark") || document.getElementById("body-light");
+  if (isDark) {
+    body.id = "body-light";
+    document.getElementById("themeBtn").textContent = "🧛🏿 Spooky";
+    isDark = false;
+    localStorage.setItem("travhell_theme", "light");
+  } else {
+    body.id = "body-dark";
+    document.getElementById("themeBtn").textContent = "🌿 Nature";
+    isDark = true;
+    localStorage.setItem("travhell_theme", "dark");
+  }
 }
 
-const savedTheme = localStorage.getItem("travhell_theme");
-if (savedTheme) {
-  document.documentElement.setAttribute("data-theme", savedTheme);
-  document.getElementById("themeBtn").textContent = savedTheme === "light" ? "☀️" : "🌙";
+var savedTheme = localStorage.getItem("travhell_theme");
+if (savedTheme === "light") {
+  document.body.id = "body-light";
+  isDark = false;
+  document.getElementById("themeBtn").textContent = "💀 Spooky";
 }
 
 function toggleFavPanel() {
@@ -108,31 +78,34 @@ function toggleFavPanel() {
 }
 
 function renderFavPanel() {
-  const list = document.getElementById("favList");
+  var list = document.getElementById("favList");
   if (favorites.length === 0) {
-    list.innerHTML = `<div class="fav-empty"><span style="font-size:2rem">🗺️</span><p>No saved places yet.<br>Tap ♥ on any card to save.</p></div>`;
+    list.innerHTML = '<div class="fav-empty"><span style="font-size:2rem">🗺️</span><p>No saved places yet.<br>Tap Save on any card.</p></div>';
     return;
   }
-  list.innerHTML = favorites.map(f => `
-    <div class="fav-item">
-      <img src="${f.img}" alt="${f.name}" onerror="this.src='${FALLBACK_IMG}'" />
-      <div>
-        <div class="fav-item-name">${f.name}</div>
-        <div class="fav-item-loc">📍 ${f.city}, ${f.country}</div>
-      </div>
-      <button class="fav-remove" onclick="removeFav('${f.id}')">✕</button>
-    </div>
-  `).join("");
+  var html = "";
+  for (var i = 0; i < favorites.length; i++) {
+    var f = favorites[i];
+    html += '<div class="fav-item">';
+    html += '<img src="' + f.img + '" onerror="this.src=\'' + FALLBACK_IMG + '\'" />';
+    html += '<div><div class="fav-item-name">' + f.name + '</div>';
+    html += '<div class="fav-item-loc">📍 ' + f.city + ', ' + f.country + '</div></div>';
+    html += '<button class="fav-remove" onclick="removeFav(\'' + f.id + '\')">✕</button>';
+    html += '</div>';
+  }
+  list.innerHTML = html;
 }
 
 function removeFav(id) {
-  favorites = favorites.filter(f => f.id !== id);
+  var newFavs = [];
+  for (var i = 0; i < favorites.length; i++) {
+    if (favorites[i].id !== id) newFavs.push(favorites[i]);
+  }
+  favorites = newFavs;
   saveFavs();
   renderFavPanel();
   renderGrid();
 }
-
-const api = `https://api.geoapify.com/v2/places?categories=tourism&filter=circle:77.2167,28.6667,20000&limit=50&apiKey=${API_KEY}`;
 
 async function fetchPlaces() {
   loading.style.display = "flex";
@@ -141,26 +114,37 @@ async function fetchPlaces() {
   resultInfo.textContent = "";
 
   try {
-    const res  = await fetch(api);
-    const data = await res.json();
+    var res = await fetch(API_URL);
+    var data = await res.json();
+    var raw = data.features || [];
 
-    const raw = data.features || [];
-    const resolved = await Promise.all(raw.map(async (place) => {
-      const name       = place.properties.name || "Unknown Place";
-      const city       = place.properties.city || place.properties.county || "Unknown";
-      const country    = place.properties.country || "";
-      const category   = place.properties.categories?.[0] || "tourism";
-      const wikidataId = place?.properties?.wiki_and_media?.wikidata;
-      const id         = place.properties.place_id || Math.random().toString(36).slice(2);
-      const img        = await getImage(wikidataId);
+    var resolved = [];
+    for (var i = 0; i < raw.length; i++) {
+      var p = raw[i].properties;
+      var name = p.name || "";
+      if (!name) continue;
 
-      return { id, name, city, country, category, img };
-    }));
+      var city = p.city || p.county || "Unknown";
+      var country = p.country || "";
+      var categories = p.categories || [];
+      var wikidataId = p.wiki_and_media ? p.wiki_and_media.wikidata : null;
+      var id = p.place_id || ("place_" + i);
+      var img = await getImage(wikidataId);
 
-    allPlaces = resolved.filter(p => p.name !== "Unknown Place");
+      resolved.push({
+        id: id,
+        name: name,
+        city: city,
+        country: country,
+        categories: categories,
+        img: img
+      });
+    }
+
+    allPlaces = resolved;
     currentFilter = "all";
-    currentPage   = 1;
-    searchQuery   = "";
+    currentPage = 1;
+    searchQuery = "";
     document.getElementById("searchInput").value = "";
 
     applySortFilter();
@@ -168,68 +152,119 @@ async function fetchPlaces() {
   } catch (err) {
     loading.style.display = "none";
     container.style.display = "grid";
-    container.innerHTML = `<p style="color:var(--muted);grid-column:1/-1;text-align:center;padding:3rem">Failed to load places. Check your API key or internet.</p>`;
+    container.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:40px;color:#888">Failed to load places. Check API key or internet.</p>';
   }
 }
 
 async function getImage(wikidataId) {
   try {
     if (!wikidataId) return FALLBACK_IMG;
-    const res    = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${wikidataId}.json`);
-    const data   = await res.json();
-    const entity = data.entities[wikidataId];
-    if (!entity?.claims?.P18) return FALLBACK_IMG;
-    const imgName = entity.claims.P18[0].mainsnak.datavalue.value;
-    return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(imgName)}`;
-  } catch {
+    var res = await fetch("https://www.wikidata.org/wiki/Special:EntityData/" + wikidataId + ".json");
+    var data = await res.json();
+    var entity = data.entities[wikidataId];
+    if (!entity || !entity.claims || !entity.claims.P18) return FALLBACK_IMG;
+    var imgName = entity.claims.P18[0].mainsnak.datavalue.value;
+    return "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(imgName);
+  } catch (e) {
     return FALLBACK_IMG;
   }
 }
 
 function handleSearch() {
   clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    searchQuery   = document.getElementById("searchInput").value.trim().toLowerCase();
-    currentPage   = 1;
+  debounceTimer = setTimeout(function() {
+    searchQuery = document.getElementById("searchInput").value.trim().toLowerCase();
+    currentPage = 1;
     applySortFilter();
   }, 350);
 }
 
 function setFilter(filter, btn) {
   currentFilter = filter;
-  currentPage   = 1;
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  currentPage = 1;
+  var buttons = document.querySelectorAll(".filter-btn");
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].classList.remove("active");
+  }
   btn.classList.add("active");
   applySortFilter();
 }
 
+function getCategoryType(categories) {
+  var joined = "";
+  for (var i = 0; i < categories.length; i++) {
+    joined += categories[i].toLowerCase() + " ";
+  }
+
+  if (joined.indexOf("castle") > -1 || joined.indexOf("monument") > -1 || joined.indexOf("memorial") > -1 || joined.indexOf("historic") > -1) return "historic";
+  if (joined.indexOf("mosque") > -1 || joined.indexOf("place_of_worship") > -1 || joined.indexOf("religion") > -1 || joined.indexOf("temple") > -1 || joined.indexOf("church") > -1) return "religion";
+  if (joined.indexOf("natural") > -1 || joined.indexOf("park") > -1 || joined.indexOf("nature") > -1) return "natural";
+  if (joined.indexOf("museum") > -1 || joined.indexOf("cultural") > -1 || joined.indexOf("art") > -1 || joined.indexOf("gallery") > -1) return "cultural";
+  if (joined.indexOf("sport") > -1 || joined.indexOf("stadium") > -1) return "sport";
+  return "tourism";
+}
+
+function getCategoryLabel(type) {
+  if (type === "historic")  return "🏛️ Historic";
+  if (type === "religion")  return "🕌 Religious";
+  if (type === "natural")   return "🌿 Nature";
+  if (type === "cultural")  return "🎭 Culture";
+  if (type === "sport")     return "⚽ Sport";
+  return "📍 Tourism";
+}
+
+function getAllCategoryTags(categories) {
+  var tags = [];
+  for (var i = 0; i < categories.length; i++) {
+    var cat = categories[i];
+    var parts = cat.split(".");
+    var last = parts[parts.length - 1];
+    var label = last.replace(/_/g, " ");
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+    var alreadyIn = false;
+    for (var j = 0; j < tags.length; j++) {
+      if (tags[j] === label) { alreadyIn = true; break; }
+    }
+    if (!alreadyIn && label.length > 1) tags.push(label);
+  }
+  return tags;
+}
+
 function applySortFilter() {
-  let result = allPlaces.filter(p => {
+  var result = allPlaces.filter(function(p) {
     if (!searchQuery) return true;
-    return (
-      p.name.toLowerCase().includes(searchQuery) ||
-      p.category.toLowerCase().includes(searchQuery) ||
-      p.city.toLowerCase().includes(searchQuery)
-    );
+    var nameMatch = p.name.toLowerCase().indexOf(searchQuery) > -1;
+    var cityMatch = p.city.toLowerCase().indexOf(searchQuery) > -1;
+    var catMatch  = false;
+    for (var i = 0; i < p.categories.length; i++) {
+      if (p.categories[i].toLowerCase().indexOf(searchQuery) > -1) { catMatch = true; break; }
+    }
+    return nameMatch || cityMatch || catMatch;
   });
 
   if (currentFilter !== "all") {
-    result = result.filter(p => p.category.toLowerCase().includes(currentFilter));
+    result = result.filter(function(p) {
+      var type = getCategoryType(p.categories);
+      return type === currentFilter;
+    });
   }
 
-  const sortVal = document.getElementById("sortSelect").value;
-  if (sortVal === "name_asc")  result = result.sort((a, b) => a.name.localeCompare(b.name));
-  if (sortVal === "name_desc") result = result.sort((a, b) => b.name.localeCompare(a.name));
+  var sortVal = document.getElementById("sortSelect").value;
+  if (sortVal === "name_asc") {
+    result = result.sort(function(a, b) { return a.name.localeCompare(b.name); });
+  }
+  if (sortVal === "name_desc") {
+    result = result.sort(function(a, b) { return b.name.localeCompare(a.name); });
+  }
 
   filteredPlaces = result;
-
-  resultInfo.textContent = `Showing ${filteredPlaces.length} place${filteredPlaces.length !== 1 ? "s" : ""}`;
+  resultInfo.textContent = "Showing " + filteredPlaces.length + (filteredPlaces.length === 1 ? " place" : " places");
 
   loading.style.display = "none";
   container.style.display = "grid";
 
   if (filteredPlaces.length === 0) {
-    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--muted)"><div style="font-size:3rem;margin-bottom:1rem">🗺️</div><p>No places found. Try a different search or filter.</p></div>`;
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#888"><div style="font-size:3rem;margin-bottom:12px">🗺️</div><p>No places found. Try a different search or filter.</p></div>';
     pagination.innerHTML = "";
     return;
   }
@@ -239,66 +274,85 @@ function applySortFilter() {
 }
 
 function renderGrid() {
-  const start    = (currentPage - 1) * PER_PAGE;
-  const pageData = filteredPlaces.slice(start, start + PER_PAGE);
+  var start = (currentPage - 1) * PER_PAGE;
+  var pageData = filteredPlaces.slice(start, start + PER_PAGE);
+  var html = "";
 
-  container.innerHTML = pageData.map((place, i) => {
-    const saved = isFaved(place.id);
-    return `
-      <div class="card" style="animation-delay:${i * 0.06}s">
-        <img
-          src="${place.img}"
-          alt="${place.name}"
-          onerror="this.src='${FALLBACK_IMG}'"
-        />
-        <div class="card-body">
-          <h3>${place.name}</h3>
-          <p class="location">📍 ${place.city}, ${place.country}</p>
-          <p class="category">${formatCategory(place.category)}</p>
-          <div class="card-footer">
-            <button class="btn-view" onclick="openModal('${escStr(place.name)}','${escStr(place.city)}','${escStr(place.country)}','${escStr(place.category)}','${escStr(place.img)}')">View More</button>
-            <button class="btn-save ${saved ? "saved" : ""}" onclick="handleSave('${place.id}', this)">
-              <span class="heart-icon">${saved ? "♥" : "♡"}</span> ${saved ? "Saved" : "Save"}
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
+  for (var i = 0; i < pageData.length; i++) {
+    var place = pageData[i];
+    var saved = isFaved(place.id);
+    var type = getCategoryType(place.categories);
+    var label = getCategoryLabel(type);
+
+    html += '<div class="card">';
+    html += '<div class="card-img-wrap">';
+    html += '<img src="' + place.img + '" alt="' + place.name + '" onerror="this.src=\'' + FALLBACK_IMG + '\'" />';
+    html += '<span class="cat-badge">' + label + '</span>';
+    html += '</div>';
+    html += '<div class="card-body">';
+    html += '<h3>' + place.name + '</h3>';
+    html += '<p class="location">📍 ' + place.city + ', ' + place.country + '</p>';
+    html += '<div class="card-footer">';
+
+    html += '<button class="btn-view" onclick="openModal(\'' + esc(place.id) + '\')">View More</button>';
+    html += '<button class="btn-save ' + (saved ? "saved" : "") + '" onclick="handleSave(\'' + place.id + '\', this)">' + (saved ? "♥ Saved" : "♡ Save") + '</button>';
+
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
 }
 
 function handleSave(id, btn) {
-  const place = allPlaces.find(p => p.id === id);
+  var place = null;
+  for (var i = 0; i < allPlaces.length; i++) {
+    if (allPlaces[i].id === id) { place = allPlaces[i]; break; }
+  }
   if (!place) return;
   toggleFav(place);
-  const saved = isFaved(id);
-  btn.innerHTML = `<span class="heart-icon">${saved ? "♥" : "♡"}</span> ${saved ? "Saved" : "Save"}`;
-  btn.classList.toggle("saved", saved);
+  var saved = isFaved(id);
+  btn.textContent = saved ? "♥ Saved" : "♡ Save";
+  if (saved) { btn.classList.add("saved"); } else { btn.classList.remove("saved"); }
 }
 
-function openModal(name, city, country, category, img) {
-  document.getElementById("modal-img").src       = img;
-  document.getElementById("modal-img").onerror   = () => { document.getElementById("modal-img").src = FALLBACK_IMG; };
-  document.getElementById("modal-name").textContent     = name;
-  document.getElementById("modal-location").textContent = `📍 ${city}, ${country}`;
-  document.getElementById("modal-category").textContent = formatCategory(category);
+function openModal(id) {
+  var place = null;
+  for (var i = 0; i < allPlaces.length; i++) {
+    if (allPlaces[i].id === id) { place = allPlaces[i]; break; }
+  }
+  if (!place) return;
+
+  document.getElementById("modal-img").src = place.img;
+  document.getElementById("modal-img").onerror = function() { this.src = FALLBACK_IMG; };
+  document.getElementById("modal-name").textContent = place.name;
+  document.getElementById("modal-location").textContent = "📍 " + place.city + ", " + place.country;
+
+  var tags = getAllCategoryTags(place.categories);
+  var tagsHtml = "";
+  for (var i = 0; i < tags.length; i++) {
+    tagsHtml += '<span class="modal-cat-tag">' + tags[i] + '</span>';
+  }
+  document.getElementById("modal-categories").innerHTML = tagsHtml;
+
   document.getElementById("modal").classList.remove("hidden");
 }
 
 function renderPagination() {
-  const total = Math.ceil(filteredPlaces.length / PER_PAGE);
+  var total = Math.ceil(filteredPlaces.length / PER_PAGE);
   if (total <= 1) { pagination.innerHTML = ""; return; }
 
-  let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>←</button>`;
-  for (let i = 1; i <= total; i++) {
-    html += `<button class="page-btn ${i === currentPage ? "active" : ""}" onclick="goPage(${i})">${i}</button>`;
+  var html = '<button class="page-btn" onclick="goPage(' + (currentPage - 1) + ')" ' + (currentPage === 1 ? "disabled" : "") + '>←</button>';
+  for (var i = 1; i <= total; i++) {
+    html += '<button class="page-btn ' + (i === currentPage ? "active" : "") + '" onclick="goPage(' + i + ')">' + i + '</button>';
   }
-  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === total ? "disabled" : ""}>→</button>`;
+  html += '<button class="page-btn" onclick="goPage(' + (currentPage + 1) + ')" ' + (currentPage === total ? "disabled" : "") + '>→</button>';
   pagination.innerHTML = html;
 }
 
 function goPage(page) {
-  const total = Math.ceil(filteredPlaces.length / PER_PAGE);
+  var total = Math.ceil(filteredPlaces.length / PER_PAGE);
   if (page < 1 || page > total) return;
   currentPage = page;
   renderGrid();
@@ -306,12 +360,8 @@ function goPage(page) {
   window.scrollTo({ top: 300, behavior: "smooth" });
 }
 
-function formatCategory(cat) {
-  return cat.split(".").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" › ");
-}
-
-function escStr(str) {
-  return (str || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+function esc(str) {
+  return (str || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 updateFavCount();

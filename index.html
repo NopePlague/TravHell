@@ -1,44 +1,44 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TravHell</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="https://static.vecteezy.com/system/resources/thumbnails/058/272/454/small/vibrant-3d-rendering-of-planet-earth-showcasing-continents-and-oceans-png.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
 </head>
-<body>
+<body id="body-dark">
 
   <nav>
-    <div class="logo">TravHell ✦</div>
+    <div class="logo">TravHell 👾</div>
     <div class="nav-right">
       <button class="fav-nav-btn" onclick="toggleFavPanel()">
         ♥ Saved <span id="favCount" class="fav-count">0</span>
       </button>
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌿 Nature</button>
     </div>
   </nav>
 
-  <section class="hero">
-    <div class="blob b1"></div>
-    <div class="blob b2"></div>
-    <p class="hero-tag">✦ Local spots. Real gems.</p>
-    <h1>Discover Places<br><span class="grad">Only Locals Know</span></h1>
+  <div class="hero">
+    <p class="hero-tag">👻 Local spots. Hidden gems. Real adventures.</p>
+    <h1 class="hero-title">Discover Places<br><span class="hero-accent">Only Locals Know</span></h1>
     <p class="hero-sub">Skip the tourist traps. Find hidden viewpoints, secret dhabas, and offbeat spots that never make it to travel guides.</p>
-    <div class="search-bar">
+    <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Search by name or category..." oninput="handleSearch()" />
+      <input type="text" id="searchInput" class="search-input" placeholder="Search by name, city or category..." oninput="handleSearch()" />
     </div>
-  </section>
+  </div>
 
-  <div class="controls" id="controls">
+  <div class="controls">
     <div class="filters">
       <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
       <button class="filter-btn" onclick="setFilter('natural', this)">🌿 Nature</button>
       <button class="filter-btn" onclick="setFilter('cultural', this)">🎭 Culture</button>
-      <button class="filter-btn" onclick="setFilter('heritage', this)">🏛️ Heritage</button>
+      <button class="filter-btn" onclick="setFilter('historic', this)">🏛️ Historic</button>
       <button class="filter-btn" onclick="setFilter('religion', this)">🕌 Religious</button>
       <button class="filter-btn" onclick="setFilter('sport', this)">⚽ Sport</button>
+      <button class="filter-btn" onclick="setFilter('tourism', this)">📍 Tourism</button>
     </div>
     <select id="sortSelect" class="sort-select" onchange="applySortFilter()">
       <option value="default">Sort: Default</option>
@@ -51,7 +51,7 @@
 
   <div id="loading" class="loading-wrap">
     <div class="spinner"></div>
-    <p>Finding hidden gems...</p>
+    <p>Haunting hidden gems...</p>
   </div>
 
   <div id="places" class="grid"></div>
@@ -62,9 +62,11 @@
     <div class="modal-box">
       <button class="modal-close" onclick="document.getElementById('modal').classList.add('hidden')">✕</button>
       <img id="modal-img" alt="place" />
-      <h2 id="modal-name"></h2>
-      <p id="modal-location"></p>
-      <p id="modal-category"></p>
+      <div class="modal-body">
+        <h2 id="modal-name"></h2>
+        <p id="modal-location"></p>
+        <div id="modal-categories" class="modal-cats"></div>
+      </div>
     </div>
   </div>
 
